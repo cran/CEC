@@ -2,7 +2,7 @@
 #define	CEC_CONTEXT_H
 
 #include "matrix.h"
-#include "energy_function.h"
+#include "energy.h"
 
 struct cec_temp_data
 {
@@ -17,11 +17,10 @@ struct cec_context
     /*
      * Input parameters.
      */
-
     struct cec_matrix * points;
     struct cec_matrix * centers;
-    struct energy_function_context ** energy_function_contexts;
-    energy_function * energy_functions;
+    struct cross_entropy_context ** cross_entropy_contexts;
+    cross_entropy_function * cross_entropy_functions;
     int max_iterations;
     int min_card;
 
@@ -29,7 +28,6 @@ struct cec_context
      * CEC result (output parameters).
      * Memory must be allocated before performing the algorithm.
      */
-
     int * clustering_vector;
     int * clusters_number;
     int iterations;
@@ -41,7 +39,6 @@ struct cec_context
      * Temporary data. 
      * Memory must be allocated before performing the algorithm.
      */
-
     struct cec_temp_data * temp_data;
 };
 
@@ -50,8 +47,8 @@ struct cec_matrix ** create_cec_matrix_array(int m, int n, int l);
 struct cec_context * create_cec_context(
 	struct cec_matrix * points,
 	struct cec_matrix * centers,
-	struct energy_function_context ** energy_function_contexts,
-	energy_function * energy_functions,
+	struct cross_entropy_context ** cross_entropy_contexts,
+	cross_entropy_function * cross_entropy_functions,
 	int max_iterations,
 	int min_card
 	);

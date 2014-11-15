@@ -1,12 +1,15 @@
-#ifndef ENERGY_FUNCTION_CONTEXT_H
-#define	ENERGY_FUNCTION_CONTEXT_H
+#ifndef CROSS_ENTROPY_CONTEXT_H
+#define	CROSS_ENTROPY_CONTEXT_H
 
 enum density_family
 {
     GIVEN_COVARIANCE = 0, FIXED_R = 1, SPHERICAL = 2, DIAGONAL = 3, FIXEDEIGENVALUES = 4, ALL = 5
 };
 
-struct energy_function_context
+/*
+ * Static context of all cross entropy functions.
+ */
+struct cross_entropy_context
 {
     int n;
     struct cec_matrix * temp_matrix;
@@ -14,6 +17,10 @@ struct energy_function_context
     void * custom_context;
     enum density_family family;
 };
+
+/*
+ * Custom contexts for specific implementations.
+ */
 
 struct context_gc
 {
@@ -34,10 +41,10 @@ struct context_r
     double r;
 };
 
-void destroy_energy_function_context(struct energy_function_context * context);
+void destroy_cross_entropy_context(struct cross_entropy_context * context);
 
-struct energy_function_context * create_energy_function_context(
+struct cross_entropy_context * create_cross_entropy_context(
 	enum density_family family, int n);
 
-#endif	/* ENERGY_FUNCTION_CONTEXT_H */
+#endif	/* CROSS_ENTROPY_CONTEXT_H */
 

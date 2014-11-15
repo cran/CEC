@@ -1,5 +1,5 @@
-#ifndef MATRIX_DOUBLE_H
-#define	MATRIX_DOUBLE_H
+#ifndef MATRIX_H
+#define	MATRIX_H
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -7,6 +7,10 @@
 
 #include "errors.h"
 #include "array.h"
+
+/*
+ * Simple matrix structure used in CEC and basic set of matrix functions.
+ */
 
 struct cec_matrix
 {
@@ -58,5 +62,5 @@ void cec_vector_outer_product(const double *restrict vec,
 	struct cec_matrix *restrict output_matrix, int n);
 
 
-#endif	/* MATRIX_DOUBLE_H */
+#endif	/* MATRIX_H */
 

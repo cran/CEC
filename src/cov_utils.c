@@ -8,9 +8,7 @@ double cec_cov_trace(const struct cec_matrix * m)
 {
     double res = 0;
     for (int i = 0; i < m->n; i++)
-    {
 	res += cec_matrix_element(m, i, i);
-    }
     return res;
 }
 
@@ -26,9 +24,6 @@ double cec_cov_diagonal_product(const struct cec_matrix * m)
 void cec_cov_multiply(const struct cec_matrix * m1,
 	const struct cec_matrix * m2, struct cec_matrix * dest)
 {
-    /*
-     Simple matrix multiplication.
-     */
     int n = m1->n;
     cec_matrix_set(dest, 0.0);
     for (int i = 0; i < n; i++)
@@ -60,7 +55,7 @@ int cec_cov_cholesky(const struct cec_matrix * sym_matrix, struct cec_matrix * t
     array_copy(sym_matrix->data, temp_matrix->data, n * n);   
     F77_NAME(dpotrf)("U", &n, temp_matrix->data, &n, &info);  
     if (info != 0) 
-	return POSITIVE_DEFINITE_ERROR;
+	return INVALID_COVARIANCE_ERROR;
     else
 	return 0;
 }
@@ -118,13 +113,12 @@ double cec_cov_cholesky_det(const struct cec_matrix * m,
     /*
      * Special case for 2x2 matrix.
      */
-
     if (m->n == 2)
     {
 	double det = m->data[0] * m->data[3] - m->data[1] * m->data[2];
 	return det;
 	
-    } else if (cec_cov_cholesky(m, temp) == POSITIVE_DEFINITE_ERROR)
+    } else if (cec_cov_cholesky(m, temp) == INVALID_COVARIANCE_ERROR)
     {
 	return NAN;
     }

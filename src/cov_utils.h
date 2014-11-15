@@ -1,8 +1,12 @@
 
-#ifndef MATRIX_UTILS_H
-#define	MATRIX_UTILS_H
+#ifndef COV_UTILS_H
+#define	COV_UTILS_H
 
 #include "matrix.h"
+
+/*
+ * Set of functions operating on covariance matrix.
+ */
 
 double cec_cov_trace(const struct cec_matrix * m);
 
@@ -29,5 +33,5 @@ void cec_cov_remove_point(const struct cec_matrix * covariance,
 	struct cec_matrix * new_covarioance, const double * mean,
 	double const * point, int card, struct cec_matrix * t_matrix);
 
-#endif	/* MATRIX_UTILS_H */
+#endif	/* COV_UTILS_H */
 
