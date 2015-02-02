@@ -24,25 +24,36 @@ Numeric matrix of data.
 
 \item{centers}{
 Either a matrix of initial centers or the number of initial centers (\code{k}, single 
-number or a vector of numbers for variable number of initial centers at each start). 
-In the latter case, initial centers will be generated using a method depending on
-the \code{centers.init} argument.
+number \code{cec(data, 4, ...)} or a vector for variable number of 
+centers \code{cec(data, 3:10, ...)}). 
+
+If \code{centers} is a vector, \code{length(centers)} clusterings will be performed for each
+start (\code{nstart} argument) and the total number of clusterings will be 
+\code{length(centers) * nstart}.
+
+If \code{centers} is a number or a vector, initial centers will be generated using a method
+depending on the \code{centers.init} argument.
 }
 
 \item{type}{
 Type (or types) of clustering (density family). This can be either a single value 
 or a vector of length equal to the number of centers. Possible values are: "covariance",
 "fixedr", "spherical", "diagonal", "eigenvalues", "all" (default).
+
+Currently, if the \code{centers} argument is a vector, only signle type can be used.
 }
 
 \item{iter.max}{
-Maximum number of iterations at each start.
+Maximum number of iterations at each clustering.
 }
 
 \item{nstart}{
-Number of clusterings to perform (with different initial centers). Only the best 
+The number of clusterings to perform (with different initial centers). Only the best 
 clustering (with the lowest cost) will be returned. Value grater then one is valid 
-only if the \code{centers} argument is a number.
+only if the \code{centers} argument is a number or a vector.
+
+If the \code{centers} argument is a vector, \code{length(centers)} clusterings will be performed
+for each start and the total number of clusterings will be \code{length(centers) * nstart}.
 }
 
 \item{centers.init}{
@@ -137,12 +148,9 @@ m2 = matrix(rnorm(2000, mean = 3, sd = 1.5), ncol = 2)
 m3 = matrix(rnorm(2000, mean = 3, sd = 1), ncol = 2)
 m3[,2] = m3[,2] - 5
 m = rbind(m1, m2, m3)
-centers = initcenters(m, 10)
+centers = init.centers(m, 10)
 par(ask = TRUE)
 plot(m, cex = 0.5, pch = 16)
-## Initial centers:
-Z = cec(m, centers, type="sp", iter.max = -1, card.min="7\%")
-plot(Z)
 ## Clustering result:
 Z = cec(m, centers, type="sp", iter.max = 100, card.min="7\%")
 plot(Z)
@@ -154,10 +162,7 @@ cec.plot.cost.function(Z)
 m = mouseset(n=7000, r.head=2, r.left.ear=1.1, r.right.ear=1.1, left.ear.dist=2.5,
 right.ear.dist=2.5, dim=2)
 plot(m, cex = 0.5, pch = 16)
-centers = initcenters(m, 3)
-## Initial centers:
-Z = cec(m, centers, type="sp", iter.max = -1, card.min="5\%")
-plot(Z)
+centers = init.centers(m, 3)
 ## Clustering result:
 Z = cec(m, centers, type="sp", iter.max = 100, nstart=4, card.min="5\%")
 plot(Z)
@@ -168,10 +173,7 @@ cec.plot.cost.function(Z)
 ## Example of clustering data set "Tset" using "eigenvalues" clustering type.
 data(Tset)
 plot(Tset, cex = 0.5, pch = 16)
-centers = initcenters(Tset, 2)
-## Initial centers:
-Z <- cec(Tset, 5, type="eigenvalues", param=c(0.02,0.002), iter.max= -1)
-plot(Z)
+centers = init.centers(Tset, 2)
 ## Clustering result:
 Z <- cec(Tset, 5, "eigenvalues", param=c(0.02,0.002), nstart=4)
 plot(Z)

@@ -17,6 +17,7 @@ cec <- function(
   if (!hasArg(x)) stop("Missing requierd argument: 'x'.")
   if (!hasArg(centers)) stop("Missing requierd argument: 'centers'.")
   
+  if (iter.max < 0) stop("Illegal argument: iter.max < 0.")
   if (!is.matrix(x)) stop("Illegal argument: 'x' is not a matrix.")
   if (ncol(x) < 1) stop("Illegal argument: ncol(x) < 1.")
   if (nrow(x) < 1) stop("Illegal argument: nrow(x) < 1.")
@@ -25,14 +26,13 @@ cec <- function(
   if (!all(complete.cases(centers))) stop("Illegal argument: 'centers' contains NA values.")
   
   var.centers <- F
+  var.starts  <- 1
   if (!is.matrix(centers))
   {
     if (length(centers) > 1)
-    {
+    {      
       var.centers <- T
-      if (hasArg(nstart) && nstart != length(centers))
-        stop("Illegal argument: 'nstart' != length(centers)")
-      nstart <- length(centers)
+      var.starts <- length(centers)
     }
     for (i in centers) 
       if (i < 1) stop("Illegal argument: 'centers' < 1")    
@@ -58,7 +58,7 @@ cec <- function(
   
   # run interactive mode if requested  
   if (interactive)
-    return(cec_interactive(x, centers, type, iter.max, 1, param, centers.init, card.min, keep.removed, readline))
+    return(cec.interactive(x, centers, type, iter.max, 1, param, centers.init, card.min, keep.removed, readline))
   
   n = ncol(x)
   m = nrow(x)
@@ -92,12 +92,13 @@ cec <- function(
   startTime <- proc.time()     
   
   # main loop
-  for (start in 1:nstart) 
+  for (var.start in 1:var.starts)
+  for (start     in 1:nstart) 
   {      
     if (var.centers)
     {
       # prepare input for C function cec_r with regards to the variable number of centers
-      k <- centers[start]        
+      k <- centers[var.start]        
       params <- create.cec.params(k, n, type, param)
       types <- as.integer(vapply(type, resolve.type, 0))
       if (length(types) == 1) 
@@ -105,7 +106,7 @@ cec <- function(
     }
     # generate initial centers or use provided centers matrix
     if (!centers.initilized) 
-      centers.matrix <- initcenters(x, k, centers.init)     
+      centers.matrix <- init.centers(x, k, centers.init)     
     else
       centers.matrix <- centers      
     
@@ -114,7 +115,7 @@ cec <- function(
         # perform the clustering by calling C function cec_r
         X <- .Call(cec_r, x, centers.matrix, iter.max, types, card.min, params)  
         ok.flag <- T
-        if (X$iterations < 0 || X$energy[X$iterations + 1] < tenergy)
+        if ((var.start == 1 && start == 1) || X$energy[X$iterations + 1] < tenergy)
         {
           # keep the clustering results with the lowest energy (cost function)
           tenergy = X$energy[X$iterations+1]
@@ -186,40 +187,6 @@ cec <- function(
   ), class = "cec");    
 }
 
-model.covariance <- function(type, cov, param)
-{
-  if (length(which(is.na(cov))) > 0)
-  {
-    matrix(NA, nrow(cov), ncol(cov))
-  }  
-  else if (type == resolve.type("covariance"))
-  {
-    param[[1]]
-  }  
-  else if (type == resolve.type("fixedr"))
-  {
-    diag(ncol(cov)) * param
-  }
-  else if (type == resolve.type("spherical"))
-  {
-    diag(ncol(cov)) * sum(diag(ncol(cov)) * cov) / ncol(cov)
-  }
-  else if (type == resolve.type("diagonal"))
-  {
-    cov * diag(ncol(cov))
-  }
-  else if (type == resolve.type("eigenvalues"))
-  {    
-    V <- eigen(cov)$vec
-    D <- diag(sort(param, decreasing=T))    
-    V %*% D %*% t(V)
-  }
-  else if (type == resolve.type("all"))
-  {
-    cov
-  }
-}
-
 print.cec <- function(x, ...)
 {
   cat("CEC clustering result: \n\n")
@@ -248,8 +215,7 @@ plot.cec <- function(x, col, cex = 0.5, pch = 16, cex.centers = 1, pch.centers =
   
   if(!hasArg(col)) col = x$cluster;
   plot(x$data, col=col, cex = cex, pch = pch,  xlab = xlab, ylab = ylab, ...)    
-  points(x$centers, cex = cex.centers, pch = pch.centers) 
-  if (x$iterations > -1)
+  points(x$centers, cex = cex.centers, pch = pch.centers)   
     if (ellipses)
     {    
       for (i in 1:nrow(x$centers))     
@@ -273,14 +239,7 @@ plot.cec <- function(x, col, cex = 0.5, pch = 16, cex.centers = 1, pch.centers =
     }  
 }
 
-cec.plot.cost.function <- function(C, xlab="Iteration", ylab="Cost function", lwd=5, col="red", lwd.points=5, pch.points=19, col.points="black", mgp=c(1.5,0.5,0), ...)
-{
-  plot(x = 1:(length(C$cost) - 1), y = C$cost[2:(length(C$cost))], xlab=xlab, ylab=ylab, type="l", lwd=lwd, col=col, mgp=mgp, ...)
-  points(x = 1:(length(C$cost) - 1), y = C$cost[2:(length(C$cost))], lwd=lwd.points, pch=pch.points, col=col.points)
-  title("Cost function at each iteraion")
-}
-
-cec_interactive <- function(
+cec.interactive <- function(
   x, 
   centers,   
   type          = c("covariance", "fixedr", "spherical", "diagonal", "eigenvalues", "all"),  
@@ -299,8 +258,8 @@ cec_interactive <- function(
   n = ncol(x)
   if (n != 2) 
     stop("interactive mode available only for 2-dimensional data")    
-  i <- -1    
-  if (!is.matrix(centers)) centers <- initcenters(x, centers, centers.init)
+  i <- 0    
+  if (!is.matrix(centers)) centers <- init.centers(x, centers, centers.init)
   if (readline)
   {
     ignore = readline(prompt="After each iteration you may:\n - press <Enter> for next iteration \n - write number <n> (may be negative one) and press <Enter> for next <n> iterations \n - write 'q' and abort execution.\n Press <Return>.\n")        
@@ -318,17 +277,12 @@ cec_interactive <- function(
       break
     
     desc = ""
-    if (i == -1)
-      desc = "(initial cluster centers and first assignment to groups)"
-    else if (i == 0)
+    if (i == 0)
       desc = "(position of center means before first iteration)"      
     
     cat("Iterations:", Z$iterations, desc, "cost function:", Z$cost[(Z$iterations + 1)]," \n ")
     
-    if (i == -1)
-      plot(Z, ellipses = FALSE)
-    else
-      plot(Z, ellipses = TRUE)
+    plot(Z, ellipses = TRUE)
     
     if (readline) 
     {
@@ -338,8 +292,8 @@ cec_interactive <- function(
       if (!is.na(lineint)) 
       {
         i = i + lineint - 1
-        if (i < -1) 
-          i = -2        
+        if (i < 0) 
+          i = -1        
       } 
       else if (line == "q" | line == "quit") {
         break
