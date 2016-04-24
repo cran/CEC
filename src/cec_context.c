@@ -1,21 +1,22 @@
 #include "cec_context.h"
 #include "alloc.h"
+#include "checked_allocator.h"
 
 void destroy_cec_matrix_array(struct cec_matrix ** matrix_array, int l)
 {
-    if (matrix_array == NULL)
-	return;
+    if (!matrix_array)
+        return;
 
     for (int i = 0; i < l; i++)
-	cec_matrix_destroy(matrix_array[i]);
+        cec_matrix_destroy(matrix_array[i]);
 
     m_free(matrix_array);
 }
 
 static void destroy_cec_temp_data(struct cec_temp_data * data, int k)
 {
-    if (data == NULL)
-	return;
+    if (!data)
+        return;
 
     cec_matrix_destroy(data->n_covariance_matrix);
     cec_matrix_destroy(data->t_matrix_nn);
@@ -28,40 +29,44 @@ static void destroy_cec_temp_data(struct cec_temp_data * data, int k)
 
 void destroy_cec_context_results(struct cec_context * context)
 {
-    if (context == NULL)
-	return;
+    if (!context)
+        return;
 
-    int k = context->centers->m;
+    int k = context->input->centers->m;
 
-    destroy_cec_matrix_array(context->covriances, k);
+    destroy_cec_matrix_array(context->results->covriances, k);
     destroy_cec_temp_data(context->temp_data, k);
 
-    m_free(context->clustering_vector);
-    m_free(context->clusters_number);
-    m_free(context->energy);
+    m_free(context->results->clustering_vector);
+    m_free(context->results->clusters_number);
+    m_free(context->results->energy);
+    m_free(context->results->centers);
+    m_free(context->results);
+    m_free(context->input);
     m_free(context);
 }
 
 struct cec_matrix ** create_cec_matrix_array(int l, int m, int n)
 {
     struct cec_matrix ** matrix_array = m_alloc(
-	    sizeof (struct cec_matrix *) * l);
-    if (matrix_array == NULL)
-	return NULL;
+            sizeof (struct cec_matrix *) * l);
+    
+    if (!matrix_array)
+        return NULL;
 
     int m_alloc_error_flag = 0;
 
     for (int i = 0; i < l; i++)
     {
-	matrix_array[i] = cec_matrix_create(m, n);
-	if (matrix_array[i] == NULL)
-	    m_alloc_error_flag = 1;
+        matrix_array[i] = cec_matrix_create(m, n);
+        if (!matrix_array[i])
+            m_alloc_error_flag = 1;
     }
 
     if (m_alloc_error_flag)
     {
-	destroy_cec_matrix_array(matrix_array, l);
-	return NULL;
+        destroy_cec_matrix_array(matrix_array, l);
+        return NULL;
     }
 
     return matrix_array;
@@ -69,64 +74,58 @@ struct cec_matrix ** create_cec_matrix_array(int l, int m, int n)
 
 static struct cec_temp_data * create_temp_data(int k, int n)
 {
-    struct cec_temp_data * data = m_alloc(sizeof (struct cec_temp_data));
-    if (data == NULL)
-	return NULL;
+    checked_allocation;
+    struct cec_temp_data * data = check(m_alloc(sizeof (struct cec_temp_data)));
 
-    data->n_covariance_matrix = cec_matrix_create(n, n);
-    data->t_matrix_nn = cec_matrix_create(n, n);
-    data->t_mean_matrix = cec_matrix_create(k, n);
-    data->t_covariance_matrices = create_cec_matrix_array(k, n, n);
-
-    if (data->n_covariance_matrix == NULL || data->t_matrix_nn == NULL
-	    || data->t_mean_matrix == NULL
-	    || data->t_covariance_matrices == NULL)
+    data->n_covariance_matrix = check(cec_matrix_create(n, n));
+    data->t_matrix_nn = check(cec_matrix_create(n, n));
+    data->t_mean_matrix = check(cec_matrix_create(k, n));
+    if (!(data->t_covariance_matrices = create_cec_matrix_array(k, n, n)))
     {
-	destroy_cec_temp_data(data, k);
-	return NULL;
+        free_checked_pointers();
+        return NULL;
     }
 
     return data;
 }
 
 struct cec_context *
-create_cec_context(struct cec_matrix * points, struct cec_matrix * centers,
-	struct cross_entropy_context ** cross_entropy_contexts,
-	cross_entropy_function * cross_entropy_functions, int max_iterations, int min_card)
+create_cec_context(const struct cec_matrix * points, const struct cec_matrix * centers,
+        struct cec_model ** models, int max_iterations, int min_card)
 {
-    struct cec_context * context = m_alloc(sizeof (struct cec_context));
-
-    if (context == NULL)
-	return NULL;
-
+    checked_allocation;
+    struct cec_context * context = check(m_alloc(sizeof (struct cec_context)));
+    context->input = check(m_alloc(sizeof (struct cec_input)));
+    context->results = check(m_alloc(sizeof (struct cec_results)));
+    
     int m = points->m;
     int k = centers->m;
     int n = points->n;
 
-    context->points = points;
-    context->centers = centers;
-    context->cross_entropy_contexts = cross_entropy_contexts;
-    context->cross_entropy_functions = cross_entropy_functions;
-    context->max_iterations = max_iterations;
-    context->min_card = min_card;
-    context->error = NO_ERROR;
+    context->input->points = points;
+    context->input->centers = centers;
+    context->input->models = models;
+    context->input->max_iterations = max_iterations;
+    context->input->min_card = min_card;
+    
+    context->results->error = NO_ERROR;
+    context->results->clustering_vector = check(m_alloc(sizeof (int) * (m)));
+    context->results->centers = check(cec_matrix_create(k, n));
+    context->results->clusters_number = check(m_alloc(sizeof (int) * (max_iterations + 1)));
+    context->results->energy = check(m_alloc(sizeof (double) * (max_iterations + 1)));
 
-    context->clustering_vector = m_alloc(sizeof (int) * (m));
-    context->clusters_number = m_alloc(sizeof (int) * (max_iterations + 1));
-    context->energy = m_alloc(sizeof (double) * (max_iterations + 1));
-
-    context->covriances = create_cec_matrix_array(k, n, n);
-    context->temp_data = create_temp_data(k, n);
-
-    if (context->clustering_vector == NULL
-	    || (context->energy == NULL && max_iterations >= 0)
-	    || (context->clusters_number == NULL  && max_iterations >= 0)
-	    || context->covriances == NULL
-	    || context->temp_data == NULL)
+    if (!(context->results->covriances = create_cec_matrix_array(k, n, n)))
     {
-	destroy_cec_context_results(context);
-	return NULL;
+        free_checked_pointers();
+        return NULL;
     }
-
+    
+    if (!(context->temp_data = create_temp_data(k, n)))
+    {
+        destroy_cec_matrix_array(context->results->covriances, k);
+        free_checked_pointers();
+        return NULL;
+    }
+    
     return context;
 }
