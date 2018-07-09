@@ -2,41 +2,45 @@
 resolve.type <- function(type)
 {
     types <- c("covariance", "fixedr", "spherical", "diagonal", "eigenvalues", "all")
-    int.type <- switch (match.arg(type, types), covariance = 0, fixedr = 1, spherical = 2, diagonal = 3, eigenvalues = 4, all = 5)
-    int.type  
+    match.arg(type, types)
 }
 
 # prepares clustering parameters for C function
-create.cec.params <- function(k, n, type, param)
+create.cec.params.for.models <- function(k, n, type.arg, param.arg)
 {
-    params <- rep(list(NA), k)
-    
-    if (length(type) == 1) {
-        type = rep(type, k)
-        
-        if (hasArg(param)) 
-            param <- rep(list(unlist(param)), k)
+    models <- replicate(k, list())
+    types <- vapply(type.arg, resolve.type, "")
+
+    params <- NULL
+    if (hasArg(param.arg))
+        params <- param.arg
+
+    if (length(types) == 1) {
+        types <- rep(types, k)
+        if (hasArg(param.arg)) {
+            params <- rep(list(unlist(param.arg)), k)
+            params <- params[!params %in% list(NULL, NA)]
+        }
     }
-    
-    if (k != length(type)) 
+
+    if (k != length(types))
         stop("Illegal argument: illegal length of \"type\" vector.")
-    
-    if (hasArg(param)) 
-        param <- param[!param %in% list(NULL, NA)]
-    
+
     idx <- 0
     
-    for (i in 1:length(type))
+    for (i in 1:length(types))
     {
-        type.i <- resolve.type(type[i])
-        if (type.i == resolve.type("covariance")) 
+        type = types[i]
+        models[[i]]$type = type
+        models[[i]]$params = list()
+        if (type == resolve.type("covariance"))
         {
             idx <- idx + 1
-            
-            if (length(param) < idx)
+
+            if (length(params) < idx)
                 stop("Illegal argument: illegal param length.")
-            
-            cov <- param[[idx]]
+
+            cov <- params[[idx]]
             
             if (!is.array(cov)) stop("Illegal argument: illegal parameter for \"covariance\" type.")    
             if (ncol(cov) != n) stop("Illegal argument: illegal parameter for \"covariance\" type.")    
@@ -45,37 +49,37 @@ create.cec.params <- function(k, n, type, param)
             if (!try.chol(cov)) 
                 stop("Illegal argument: illegal parameter for \"covariance\" type - matrix must be positive-definite.")
             
-            i.cov = solve(cov)  
-            params[[i]] <- list(cov, i.cov)
+            cov.inv = solve(cov)
+            models[[i]]$params <- list(cov = cov, cov.inv = cov.inv)
         }
-        else if (type.i == resolve.type("fixed")) 
+        else if (type == resolve.type("fixed"))
         {
             idx <- idx + 1
             
-            if (length(param) < idx)
+            if (length(params) < idx)
                 stop("Illegal argument: illegal param length.")
             
-            r = param[[idx]]
+            r = params[[idx]]
             if (length(r) != 1) stop("Illegal argument: illegal parameter for \"fixedr\" type.")
             if (!is.numeric(r)) stop("Illegal argument: illegal parameter for \"fixedr\" type.")
             if (!r > 0)  stop("Illegal argument: illegal parameter for \"fixedr\" type.")
-            params[i] <- r
+            models[[i]]$params = list(r = r)
         } 
-        else if ( type.i == resolve.type("eigenvalues"))
+        else if (type == resolve.type("eigenvalues"))
         {
             idx <- idx + 1
             
-            if (length(param) < idx)
+            if (length(params) < idx)
                 stop("Illegal argument: illegal param length.")         
             
-            evals <- param[[idx]]         
+            evals <- params[[idx]]
             
             if (length(evals) != n) stop("Illegal argument: illegal parameter for \"eigenvalues\" type: invalid length.")
             if (!all(evals != 0)) stop("Illegal argument: illegal parameter for \"eigenvalues\" type: all values must be greater than 0.")
-            params[[i]] = sort(evals)
+            models[[i]]$params = list(eigenvalues = sort(evals))
         }
-    } 
-    params
+    }
+    models
 }
 
 try.chol <- function(mat)

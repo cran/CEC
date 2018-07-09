@@ -13,7 +13,8 @@ Performs Cross-Entropy Clustering on a data matrix.
 cec(x, centers, type = c("covariance", "fixedr", "spherical", "diagonal",  
 "eigenvalues", "all"), iter.max = 25, nstart = 1, param, 
 centers.init = c("kmeans++", "random"), card.min = "5\%", keep.removed = F, 
-interactive = F, readline = T)
+interactive = F, threads = 1, split = F, split.depth = 8, split.tries = 5, 
+split.limit = 100, split.initial.starts = 1,readline = T)
 }
 
 \arguments{
@@ -54,6 +55,8 @@ only if the \code{centers} argument is a number or a vector.
 
 If the \code{centers} argument is a vector, \code{length(centers)} clusterings will be performed
 for each start and the total number of clusterings will be \code{length(centers) * nstart}.
+
+If the split mode is on (\code{split = T}), it's rarely desired use change this parameter as the whole procedure (initial clustering + split) will be performed \code{nstart} times.
 }
 
 \item{centers.init}{
@@ -83,6 +86,40 @@ If this parameter is TRUE, removed clusters will be visible in the results as NA
 Interactive mode. If TRUE, the result of clustering will be plotted after every iteration.
 }
 
+\item{threads}{
+Specifies the number of threads to use or "auto" to use default number of threads (usually
+the number of available processing units/cores) when performing multiple starts (\code{nstart} parameter).
+
+The execution of a single start is always performed by a single thread, thus for \code{nstart = 1} only one thread will
+be used regardless of the value of this parameter.
+}
+
+\item{split}{
+Enables split mode. This mode discovers new clusters after initial clustering, by trying to split single clusters
+into two to lower the cost function.
+
+For each start (\code{nstart}), initial clustering will be performed and then split. The number of starts in
+the initial clustering before split is driven by the \code{split.initial.starts} parameter.
+}
+
+\item{split.depth}{
+Cluster subdivision depth used in split mode. Usually a value less than 10 is sufficient (when after each subdivision,
+new clusters have similar sizes). For some data, subdivisions may often produce a cluster (one of the two) that will
+not be split further, in that case a higher value of the \code{split.depth} is required.
+}
+
+\item{split.tries}{
+The number of attempts that are made when trying to split a cluster in split mode.
+}
+
+\item{split.limit}{
+Maximum number of centers to be discovered in split mode.
+}
+
+\item{split.initial.starts}{
+The number of 'standard' starts performed before starting split.
+}
+
 \item{readline}{
 Used only in the interactive mode. If \code{readline} is TRUE, at each iteration, before
 plotting it will wait for the user to press <Return> instead of standard "before plotting"
@@ -92,8 +129,7 @@ plotting it will wait for the user to press <Return> instead of standard "before
 }
 \value{
   Returns an object of class "cec" with available components:
-  "data", "cluster", "probabilities", "centers", "cost.function", "nclusters", "final.cost.function", 
-  "final.nclusters", "iterations", "cost", "covariances", 
+  "data", "cluster", "probabilities", "centers", "cost.function", "nclusters", "iterations", "cost", "covariances", 
   "covariances.model", "time".
 }
 
@@ -133,12 +169,8 @@ Konrad Kamieniecki, Jacek Tabor, Przemysław Spurek
 }
 \examples{
 #
-#
-#
 # Cross-Entropy Clustering
 #
-#
-# 
 
 ## Example of clustering random dataset of 3 Gaussians using spherical Gaussian densities, 
 ## 10 random initial centers and 7\% as minimal cluster size.
@@ -156,8 +188,6 @@ Z = cec(m, centers, type="sp", iter.max = 100, card.min="7\%")
 plot(Z)
 # Result:
 Z
-# Cost function:
-cec.plot.cost.function(Z)
 ## Example of clustering mouse-like set.
 m = mouseset(n=7000, r.head=2, r.left.ear=1.1, r.right.ear=1.1, left.ear.dist=2.5,
 right.ear.dist=2.5, dim=2)
@@ -168,8 +198,7 @@ Z = cec(m, centers, type="sp", iter.max = 100, nstart=4, card.min="5\%")
 plot(Z)
 # Result:
 Z
-# Cost function:
-cec.plot.cost.function(Z)
+
 ## Example of clustering data set "Tset" using "eigenvalues" clustering type.
 data(Tset)
 plot(Tset, cex = 0.5, pch = 19)
@@ -179,8 +208,15 @@ Z <- cec(Tset, 5, "eigenvalues", param=c(0.02,0.002), nstart=4)
 plot(Z)
 # Result:
 Z
-# Cost function:
-cec.plot.cost.function(Z)
+
+## Example of using CEC split method starting with single cluster.
+data(mixShapes)
+plot(mixShapes, cex = 0.5, pch = 19)
+## Clustering result:
+Z <- cec(mixShapes, 1, split=TRUE)
+plot(Z)
+# Result:
+Z
 }
 \references{
 Spurek, P. and Tabor, J. (2014)
