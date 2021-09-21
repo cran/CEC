@@ -19,8 +19,15 @@ License: \tab GPL-3 \cr
 \author{
 Konrad Kamieniecki
 }
-
 \seealso{
 \code{\link{cec}}
 }
-\keyword{ clustering, entropy, gaussian, kmeans }
+
+\keyword{cluster}
+\keyword{models}
+\keyword{multivariate}
+\keyword{package}
+\concept{entropy}
+\concept{gaussian}
+\concept{gaussian mixture models}
+\concept{kmeans}
