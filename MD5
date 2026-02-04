@@ -1,6 +1,6 @@
-0aa8d6be83cc2a29d1e5260ad4501dbf *DESCRIPTION
+6c78a921387721e9900c46d818e0f898 *DESCRIPTION
 adf39be10f9a7560de82be9ff44e27c5 *NAMESPACE
-abf32b8ad4473a7e8041cf704293aa3b *NEWS.md
+5028c3a3ad43d42c7bc0bb0c00d82e0c *NEWS.md
 a0e46287df1d9378e43e29348eed386b *R/CEC-package.R
 aa0d0f3b5312698b0d4680ef8958f71c *R/cec.R
 f0482dda2ee73b4d6125e130c0139f72 *R/cec.params.R
@@ -59,7 +59,7 @@ cc74451bba6d7bab609bcb93c1b3dc69 *man/mixShapes.Rd
 29b3cf26f0a4fe67ead782b8ac6ef6aa *man/plot.cec.Rd
 d8fd957d17f48204ca9528c47f73a860 *man/print.cec.Rd
 4303e31bc39b4e071eb5b28de83b6daa *man/threeGaussians.Rd
-1e7a73f40ef0f948e0f27737b4480efa *src/Makevars
+59790d05b76c36a6444a55525b3e7cd4 *src/Makevars
 e34ef47968d0bc486da7eec21bbc224f *src/cec_r.cpp
 ed07a0e5aeb01c71057d73bfee8d922a *src/cec_r.h
 e5af54f3f31ed4a6c3e45e6a68888d34 *src/cec_starter.cpp
