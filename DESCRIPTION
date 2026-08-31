@@ -1,14 +1,14 @@
 Package: CEC
 Type: Package
 Title: Cross-Entropy Clustering
-Version: 0.11.3
-Date: 2026-02-03
+Version: 0.12.0
+Date: 2026-08-30
 Authors@R: c(
-    person("Kamieniecki", "Konrad", email = "konrad.kamieniecki@alumni.uj.edu.pl", 
-      role = c("aut")),
-    person("Spurek", "Przemyslaw", email = "przemyslaw.spurek@gmail.com", 
+    person("Kamieniecki", "Konrad", email = "konrad.kamieniecki@alumni.uj.edu.pl",
+      role = c("aut", "cph")),
+    person("Spurek", "Przemyslaw", email = "przemyslaw.spurek@gmail.com",
       role = c("ctb")),
-      person("Simon", "Garnier", email = "garnier@njit.edu", role = c("cre", "ctb"),
+      person("Simon", "Garnier", email = "garnier@njit.edu", role = c("cre", "ctb", "cph"),
       comment = c(ORCID = "0000-0002-3886-3974"))
   )
 Maintainer: Simon Garnier <garnier@njit.edu>
@@ -22,15 +22,16 @@ ByteCompile: true
 URL: https://github.com/swarm-lab/cec, https://swarm-lab.github.io/cec/
 Encoding: UTF-8
 LazyData: true
-Imports: graphics, methods, stats, utils
+Imports: graphics, methods, stats
 NeedsCompilation: yes
 License: GPL-3
-RoxygenNote: 7.3.3
-Suggests: covr
-Packaged: 2026-02-04 15:08:00 UTC; simon
-Author: Kamieniecki Konrad [aut],
+Suggests: covr, testthat (>= 3.0.0)
+Config/roxygen2/version: 8.0.0
+Config/testthat/edition: 3
+Packaged: 2026-08-30 23:14:28 UTC; simon
+Author: Kamieniecki Konrad [aut, cph],
   Spurek Przemyslaw [ctb],
-  Simon Garnier [cre, ctb] (ORCID:
+  Simon Garnier [cre, ctb, cph] (ORCID:
     <https://orcid.org/0000-0002-3886-3974>)
 Repository: CRAN
-Date/Publication: 2026-02-04 15:40:02 UTC
+Date/Publication: 2026-08-31 15:50:08 UTC
